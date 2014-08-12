@@ -26,7 +26,7 @@
 *************************************************/
 
 #if defined (SPARK)
-#include "SparkIntervalTimer.h"
+#include "SparkIntervalTimer/SparkIntervalTimer.h"
 #include "SoftPWM.h"
 #else
 #include <avr/io.h>
