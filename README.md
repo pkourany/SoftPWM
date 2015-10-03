@@ -1,14 +1,15 @@
-RGB Matrix Panel
+SoftPWM Library
 ================
 
-Arduino and wiring library adapted for Spark to produce PWM signals on any arbitrary pin.
+Arduino and wiring library adapted for Particle Core/Photon to produce PWM signals on any arbitrary pin.
 	https://code.google.com/p/rogue-code/wiki/SoftPWMLibraryDocumentation
 
 Adapted for Spark by Paul Kourany, August 12, 2014
+Updated for Core/Photon by Paul Kourany, Oct 3, 2015
 
 Spark Adaptation
 ---
-The Spark adaptation uses the SparkIntervalTimer library for timing.  The timer is set
+The Particle adaptation uses the SparkIntervalTimer library for timing.  The timer is set
 to the same 66us period as the Arduino code.
 
 There are a maximum of 16 pins which can be configured with SoftPWM, namely D0-D7 and
