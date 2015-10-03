@@ -28,11 +28,8 @@
 #ifndef SOFTPWM_H
 #define SOFTPWM_H
 
-#if defined (SPARK)
 #include "application.h"
-#else
-#include <stdint.h>
-#endif
+
 
 #define SOFTPWM_MAXCHANNELS 16
 #define SOFTPWM_PWMDEFAULT 0x00
