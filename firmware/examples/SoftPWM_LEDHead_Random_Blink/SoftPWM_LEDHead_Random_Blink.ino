@@ -1,14 +1,6 @@
-#if defined (SPARK)
 #include "SoftPWM/SoftPWM.h"
 uint8_t leds[8] = {D0, D1, D2, D3, D4, D5, D6, D7};
 
-int random(int maxRand) {
-    return rand() % maxRand;
-}
-#else
-#include <SoftPWM.h>
-uint8_t leds[8] = {22, 23, 26, 27, 28, 29, 30, 31};
-#endif
 
 #define DELAY 100
 
