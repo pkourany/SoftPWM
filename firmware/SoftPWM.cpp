@@ -25,37 +25,19 @@
 
 *************************************************/
 
-#if defined (SPARK)
 #include "../SparkIntervalTimer/SparkIntervalTimer.h"
 #include "SoftPWM.h"
-#else
-#include <avr/io.h>
-#include <avr/interrupt.h>
 
-#include "SoftPWM.h"
-#include "SoftPWM_timer.h"
-
-#if defined(WIRING)
- #include <Wiring.h>
-#elif ARDUINO >= 100
- #include <Arduino.h>
-#else
- #include <WProgram.h>
+#if !defined(PLATFORM_ID)		// Core v0.3.4
+#warning "CORE"
+  #define pinSetFast(_pin)		PIN_MAP[_pin].gpio_peripheral->BSRR = PIN_MAP[_pin].gpio_pin
+  #define pinResetFast(_pin)	PIN_MAP[_pin].gpio_peripheral->BRR = PIN_MAP[_pin].gpio_pin
+  #define digitalWriteFast(pin, value)	(value) ? pinSetFast(pin) : pinResetFast(pin)
 #endif
-#endif //Spark
 
-#if defined (SPARK)
 //Define hardware IntervalTimer
 IntervalTimer refreshTimer;
-#else
-#if F_CPU
-#define SOFTPWM_FREQ 60UL
-#define SOFTPWM_OCR (F_CPU/(8UL*256UL*SOFTPWM_FREQ))
-#else
-// 130 == 60 Hz (on 16 MHz part)
-#define SOFTPWM_OCR 130
-#endif
-#endif  //Spark
+
 volatile uint8_t _isr_softcount = 0xff;
 uint8_t _softpwm_defaultPolarity = SOFTPWM_NORMAL;
 
@@ -64,10 +46,6 @@ typedef struct
   // hardware I/O port and pin for this channel
   int8_t pin;
   uint8_t polarity;
-#if !defined(SPARK)
-  volatile uint8_t *outport;
-  uint8_t pinmask;
-#endif
   uint8_t pwmvalue;
   uint8_t checkval;
   uint8_t fadeuprate;
@@ -78,15 +56,7 @@ softPWMChannel _softpwm_channels[SOFTPWM_MAXCHANNELS];
 
 
 // Here is the meat and gravy
-#if defined(SPARK)
 void SoftPWM_Timer_Interrupt(void)
-#else
-#ifdef WIRING
-void SoftPWM_Timer_Interrupt(void)
-#else
-ISR(SOFTPWM_TIMER_INTERRUPT)
-#endif
-#endif //Spark
 {
   uint8_t i;
   int16_t newvalue;
@@ -128,17 +98,11 @@ ISR(SOFTPWM_TIMER_INTERRUPT)
       if (_softpwm_channels[i].checkval > 0)  // don't set if checkval == 0
       {
         if (_softpwm_channels[i].polarity == SOFTPWM_NORMAL)
-#if defined(SPARK)
-		  PIN_MAP[_softpwm_channels[i].pin].gpio_peripheral->BSRR = PIN_MAP[_softpwm_channels[i].pin].gpio_pin;	//hi
-#else
-          *_softpwm_channels[i].outport |= _softpwm_channels[i].pinmask;
-#endif
+		  //PIN_MAP[_softpwm_channels[i].pin].gpio_peripheral->BSRR = PIN_MAP[_softpwm_channels[i].pin].gpio_pin;	//hi
+		  pinSetFast(_softpwm_channels[i].pin);
         else
-#if defined(SPARK)
-		  PIN_MAP[_softpwm_channels[i].pin].gpio_peripheral->BRR = PIN_MAP[_softpwm_channels[i].pin].gpio_pin;	//lo
-#else
-          *_softpwm_channels[i].outport &= ~(_softpwm_channels[i].pinmask);
-#endif
+		  //PIN_MAP[_softpwm_channels[i].pin].gpio_peripheral->BRR = PIN_MAP[_softpwm_channels[i].pin].gpio_pin;	//lo
+		  pinResetFast(_softpwm_channels[i].pin);
       }
 
     }
@@ -152,17 +116,11 @@ ISR(SOFTPWM_TIMER_INTERRUPT)
       {
         // turn off the channel
         if (_softpwm_channels[i].polarity == SOFTPWM_NORMAL)
-#if defined(SPARK)
-		  PIN_MAP[_softpwm_channels[i].pin].gpio_peripheral->BRR = PIN_MAP[_softpwm_channels[i].pin].gpio_pin;	//lo
-#else
-          *_softpwm_channels[i].outport &= ~(_softpwm_channels[i].pinmask);
-#endif
+		  //PIN_MAP[_softpwm_channels[i].pin].gpio_peripheral->BRR = PIN_MAP[_softpwm_channels[i].pin].gpio_pin;	//lo
+		  pinResetFast(_softpwm_channels[i].pin);
         else
-#if defined(SPARK)
-		  PIN_MAP[_softpwm_channels[i].pin].gpio_peripheral->BSRR = PIN_MAP[_softpwm_channels[i].pin].gpio_pin;	//hi
-#else
-          *_softpwm_channels[i].outport |= _softpwm_channels[i].pinmask;
-#endif
+		  //PIN_MAP[_softpwm_channels[i].pin].gpio_peripheral->BSRR = PIN_MAP[_softpwm_channels[i].pin].gpio_pin;	//hi
+		  pinSetFast(_softpwm_channels[i].pin);
       }
     }
   }
@@ -172,37 +130,14 @@ ISR(SOFTPWM_TIMER_INTERRUPT)
 
 void SoftPWMBegin(uint8_t defaultPolarity)
 {
-  // We can tweak the number of PWM period by changing the prescalar
-  // and the OCR - we'll default to ck/8 (CS21 set) and OCR=128.
-  // This gives 1024 cycles between interrupts.  And the ISR consumes ~200 cycles, so
-  // we are looking at about 20 - 30% of CPU time spent in the ISR.
-  // At these settings on a 16 MHz part, we will get a PWM period of
-  // approximately 60Hz (~16ms).
-
   uint8_t i;
 
-#if defined(SPARK)
   refreshTimer.begin(SoftPWM_Timer_Interrupt, 66, uSec);	//Set for 60Hz
-#else
-#ifdef WIRING
-  Timer2.setMode(0b010);  // CTC
-  Timer2.setClockSource(CLOCK_PRESCALE_8);
-  Timer2.setOCR(CHANNEL_A, SOFTPWM_OCR);
-  Timer2.attachInterrupt(INTERRUPT_COMPARE_MATCH_A, SoftPWM_Timer_Interrupt);
-#else
-  SOFTPWM_TIMER_INIT(SOFTPWM_OCR);
-#endif
-#endif  //Spark
-
-
 
   for (i = 0; i < SOFTPWM_MAXCHANNELS; i++)
   {
     _softpwm_channels[i].pin = -1;
     _softpwm_channels[i].polarity = SOFTPWM_NORMAL;
-#if !defined(SPARK)
-    _softpwm_channels[i].outport = 0;
-#endif
     _softpwm_channels[i].fadeuprate = 0;
     _softpwm_channels[i].fadedownrate = 0;
   }
@@ -242,11 +177,7 @@ void SoftPWMSet(int8_t pin, uint8_t value, uint8_t hardset)
 
   if (hardset)
   {
-#if defined(SPARK)
 	//Reset hardware timer?
-#else
-    SOFTPWM_TIMER_SET(0);
-#endif
     _isr_softcount = 0xff;
   }
 
@@ -273,10 +204,6 @@ void SoftPWMSet(int8_t pin, uint8_t value, uint8_t hardset)
     // we have a free pin we can use
     _softpwm_channels[firstfree].pin = pin;
     _softpwm_channels[firstfree].polarity = _softpwm_defaultPolarity;
-#if !defined(SPARK)
-    _softpwm_channels[firstfree].outport = portOutputRegister(digitalPinToPort(pin));
-    _softpwm_channels[firstfree].pinmask = digitalPinToBitMask(pin);
-#endif
     _softpwm_channels[firstfree].pwmvalue = value;
 //    _softpwm_channels[firstfree].checkval = 0;
     
@@ -323,21 +250,13 @@ void SoftPWMSetFadeTime(int8_t pin, uint16_t fadeUpTime, uint16_t fadeDownTime)
 
       fadeAmount = 0;
       if (fadeUpTime > 0)
-#if defined(SPARK)
         fadeAmount = 255UL * 16 / fadeUpTime;
-#else
-        fadeAmount = 255UL * (SOFTPWM_OCR * 256UL / (F_CPU / 8000UL)) / fadeUpTime;
-#endif
 
       _softpwm_channels[i].fadeuprate = fadeAmount;
 
       fadeAmount = 0;
       if (fadeDownTime > 0)
-#if defined(SPARK)
         fadeAmount = 255UL * 16 / fadeDownTime;
-#else
-        fadeAmount = 255UL * (SOFTPWM_OCR * 256UL / (F_CPU / 8000UL)) / fadeDownTime;
-#endif
 
       _softpwm_channels[i].fadedownrate = fadeAmount;
 
