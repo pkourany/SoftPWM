@@ -1,11 +1,5 @@
-#if defined (SPARK)
 #include "SoftPWM/SoftPWM.h"
 #define LED D7
-#else
-#include <SoftPWM.h>
-#define LED 13
-#endif
-
 
 
 void setup()
