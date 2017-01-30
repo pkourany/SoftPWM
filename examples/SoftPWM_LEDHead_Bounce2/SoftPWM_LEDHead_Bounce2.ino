@@ -1,4 +1,5 @@
-#include "SoftPWM/SoftPWM.h"
+#include "SoftPWM.h"
+
 uint8_t leds[8] = {D0, D1, D2, D3, D4, D5, D6, D7};
 
 #define DELAY 40

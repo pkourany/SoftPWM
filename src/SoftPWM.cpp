@@ -25,7 +25,7 @@
 
 *************************************************/
 
-#include "../SparkIntervalTimer/SparkIntervalTimer.h"
+#include "SparkIntervalTimer.h"
 #include "SoftPWM.h"
 
 #if !defined(PLATFORM_ID)		// Core v0.3.4

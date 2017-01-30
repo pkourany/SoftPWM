@@ -1,7 +1,0 @@
-{
-	"name": "SoftPWM",
-	"author": "Brett Hagman / Paul Kourany",
-	"version": "1.1.0",
-	"license": "GNU General Public License 3+",
-	"description": "Software PWM library adapted for Particle Core/Photon"
-}

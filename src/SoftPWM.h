@@ -28,7 +28,7 @@
 #ifndef SOFTPWM_H
 #define SOFTPWM_H
 
-#include "application.h"
+#include "Particle.h"
 
 
 #define SOFTPWM_MAXCHANNELS 16

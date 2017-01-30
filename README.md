@@ -6,6 +6,7 @@ Arduino and wiring library adapted for Particle Core/Photon to produce PWM signa
 
 Adapted for Spark by Paul Kourany, August 12, 2014
 Updated for Core/Photon by Paul Kourany, Oct 3, 2015
+Updated for Libraries 2.0, Jan 29, 2017
 
 Spark Adaptation
 ---
@@ -17,4 +18,4 @@ A0-A7.
 
 Requirements
 ---
-The SparkIntervalTimer library must be added for the code to compile.
+The SparkIntervalTimer library is used.
